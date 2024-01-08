@@ -45,20 +45,10 @@ er.mean <-er %>% group_by(Exam,Type) %>% summarise(Mean=mean(Pass.Rate,na.rm=T))
 er2 <- er %>% mutate(Winners = Pass.Rate * Attendees) %>% mutate(Losers = (1-Pass.Rate) * Attendees)
 
 
-corr.test<-er2 %>% select(New.Exam,Attendees,Pass.Rate) %>% split(~New.Exam)
-
-cor.res<-list()
-
-for (z in 1:length(corr.test)) {
-  df<-corr.test[[z]]
-  cor.res[[z]] <- cor(df$Attendees,df$Pass.Rate,method="spearman")
-}
-
-names(cor.res) <- names(corr.test)
 
 
 
-
+# -------------------  simulation of student travel times ------------------------------------
 
 
 #start loop to try different correlations, as well as old vs new
@@ -116,6 +106,12 @@ exam.hours.index <- sum.hours/base.hours
 loop.results[[i]] <- exam.hours.index
 }
 
+
+
+
+# -------------------  construct plot of travel time distributions from simulation ------------------------------------
+
+
 #how many years for minimum qualification travel time?
 travel.time.multiplier<-2
 
@@ -130,7 +126,11 @@ res.data <- res.data %>% mutate(tt.y.round=ceiling(2*travel.time*travel.time.mul
 res.data.grp<- res.data %>% group_by(era,inter.exam.corr,tt.y.round) %>%
   summarise(proportion=n()/no.sims) %>% ungroup()
 
-ggplot(res.data.grp %>% filter(era=="old", inter.exam.corr!=1),aes(y=proportion,
+# plotting travel time distribution
+
+era <- "new"   # either "old" or "new"
+
+ggplot(res.data.grp %>% filter(era==!!era, inter.exam.corr!=1),aes(y=proportion,
                                                                   x=tt.y.round,
                                                                   fill=factor(inter.exam.corr))) +
   geom_col() +
@@ -147,8 +147,12 @@ ggplot(res.data.grp %>% filter(era=="old", inter.exam.corr!=1),aes(y=proportion,
   facet_wrap(~str_c("Correlation = ",scales::percent(inter.exam.corr)),nrow=1)
 
 
-ggsave("Travel Time diff sims - new.jpg",height=3,width=8)
+ggsave(str_c(output.folder,"/","Travel Time diff sims ",era,".jpg"),height3,width=8)
 
+
+
+
+# -------------------  comparing old vs new travel time difference by percetnile ------------------------------------
 
 percentile.steps<-1/75
 #get percentiles of results
@@ -176,7 +180,7 @@ ggplot(kp.diff %>% filter(inter.exam.corr %in% c(0.25,0.5,0.75)),aes(x=percentil
   theme(legend.position = "none",
         strip.background = element_rect(fill="lightgrey",colour="black",linewidth = 0.25)) +
   theme_bw()
-ggsave("Increased Study Times - Years.jpg",height=3,width=7)
+ggsave(str_c(output.folder,"/","Increased Study Times - Years.jpg"),height=3,width=7)
 
 
 
